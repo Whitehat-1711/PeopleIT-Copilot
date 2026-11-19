@@ -1,10 +1,11 @@
+import argparse
 import asyncio
-import sys
-from backend.agent import ask_agent, build_agent_graph
+
+from backend.agent import build_agent_graph, run_agent
 
 
-async def interactive_loop() -> None:
-    print("Initializing HR & IT Assistant (connecting to Postgres MCP & ChromaDB)...")
+async def interactive_loop(emp_id: str) -> None:
+    print(f"Initializing HR & IT Assistant for {emp_id} (connecting to Postgres MCP & ChromaDB)...")
     graph = await build_agent_graph()
     print("Ready! Type your HR/IT question below (type 'exit' or 'quit' to stop).\n")
 
@@ -21,22 +22,38 @@ async def interactive_loop() -> None:
             print("Goodbye!")
             break
 
-        answer = await ask_agent(user_input, graph)
+        answer = await run_agent(user_input, emp_id, graph=graph)
         print(f"\nAssistant:\n{answer}\n" + "-" * 50 + "\n")
 
 
-async def single_query(question: str) -> None:
+async def single_query(question: str, emp_id: str) -> None:
     graph = await build_agent_graph()
-    answer = await ask_agent(question, graph)
+    answer = await run_agent(question, emp_id, graph=graph)
     print(answer)
 
 
 def main() -> None:
-    if len(sys.argv) > 1:
-        question = " ".join(sys.argv[1:])
-        asyncio.run(single_query(question))
+    parser = argparse.ArgumentParser(
+        description="HR & IT AI Assistant CLI",
+    )
+    parser.add_argument(
+        "--as",
+        dest="emp_id",
+        required=True,
+        metavar="EMP_ID",
+        help="Your employee ID, e.g. --as E102",
+    )
+    parser.add_argument(
+        "question",
+        nargs="*",
+        help="Optional one-shot question. Omit to enter interactive mode.",
+    )
+    args = parser.parse_args()
+
+    if args.question:
+        asyncio.run(single_query(" ".join(args.question), args.emp_id))
     else:
-        asyncio.run(interactive_loop())
+        asyncio.run(interactive_loop(args.emp_id))
 
 
 if __name__ == "__main__":
