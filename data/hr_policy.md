@@ -1,4 +1,6 @@
 # Company HR Policy Handbook
+Owner: People Operations (hr@company.com)
+Last-Updated: 2026-01-15
 
 ## Annual Leave
 Full-time employees receive 24 days of paid annual leave per calendar year, accrued at a rate of 2 days per month. Employees may carry over a maximum of 5 unused annual leave days into the next calendar year; any unused days beyond 5 expire on December 31. Leave requests of 1 to 5 consecutive days require manager approval at least 5 business days in advance, while requests exceeding 5 consecutive days require department head approval at least 2 weeks in advance. Unpaid leave (Leave Without Pay) is only permitted after all accrued paid annual leave has been exhausted and requires HR Business Partner sign-off.
@@ -12,8 +14,8 @@ Primary caregivers are eligible for 26 weeks of paid maternity/adoption leave af
 ## Remote Work and Hybrid Attendance
 Employees in Engineering, Product, Marketing, and Finance operate under a hybrid schedule and may work remotely up to 3 days per week with team lead approval. All employees must attend in-office anchor days on Tuesdays and Thursdays unless granted a medical or travel exemption. Core collaboration hours for all remote and in-office staff are 10:30 AM to 4:30 PM IST. Working from outside India requires prior written approval from both IT Security and HR Compliance at least 3 weeks prior to travel.
 
-## Expense Reimbursement and Learning Stipend
-Employees are entitled to an annual Learning & Development (L&D) stipend of ₹40,000 for job-related courses, certifications, technical books, or conference tickets, subject to manager pre-approval. Business travel and client meal expenses must be submitted with itemized GST receipts within 15 calendar days of the expense date. Alcohol, personal entertainment, and family travel expenses are strictly non-reimbursable.
+## Learning and Development Stipend
+Employees are entitled to an annual Learning & Development (L&D) stipend of ₹40,000 for job-related courses, certifications, technical books, or conference tickets, subject to manager pre-approval. Claims must be submitted via the HR portal within 30 days of invoice receipt.
 
-## Notice Period and Offboarding
+## Notice Period and Resignation
 Confirmed full-time employees are required to serve a 60-day notice period upon resignation (30 days during the initial 6-month probation period). Unused annual leave cannot be used to offset notice period days unless approved in writing by the VP of Human Resources. Full and final settlement is processed within 30 days of the last working day, contingent on the return of all company IT assets.

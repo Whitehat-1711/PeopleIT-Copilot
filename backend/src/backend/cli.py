@@ -1,21 +1,37 @@
 import argparse
 import asyncio
-import json
 import os
 
 from backend.agent import build_agent_graph, run_agent
 from backend.log import log
 
 
-def format_display_answer(answer: str) -> str:
-    """Formats raw model or structured guardrail JSON response for the terminal."""
-    if isinstance(answer, str) and answer.strip().startswith('{"status": "blocked"'):
-        try:
-            data = json.loads(answer)
-            return f"{data.get('message', 'Request blocked.')} [Reason: {data.get('reason')}]"
-        except Exception:
-            pass
-    return answer
+def format_display_answer(resp) -> str:
+    """Formats structured AgentResponse object for CLI terminal rendering."""
+    if isinstance(resp, dict):
+        answer = resp.get("answer", "")
+        status = resp.get("status", "allowed")
+        reason = resp.get("reason")
+        route = resp.get("route", "direct")
+        confidence = resp.get("confidence", 0.9)
+        sources = resp.get("sources", [])
+
+        if status == "blocked":
+            return f"{answer} [Blocked: {reason}]"
+
+        lines = [answer]
+        meta_lines = []
+        if sources:
+            chips = "  ".join(
+                [f"[{s.get('document', '')} #{s.get('section', '')}]" for s in sources]
+            )
+            meta_lines.append(f"📚 Sources: {chips}")
+        meta_lines.append(f"🧭 Route: {route} | Confidence: {int(confidence * 100)}%")
+
+        if meta_lines:
+            lines.append("\n" + "\n".join(meta_lines))
+        return "\n".join(lines)
+    return str(resp)
 
 
 async def interactive_loop(emp_id: str) -> None:
@@ -38,15 +54,15 @@ async def interactive_loop(emp_id: str) -> None:
             break
 
         log(f"💬 Question received for {emp_id}")
-        answer = await run_agent(user_input, emp_id, graph=graph)
-        display = format_display_answer(answer)
+        resp = await run_agent(user_input, emp_id, graph=graph)
+        display = format_display_answer(resp)
         print(f"\nAssistant:\n{display}\n" + "-" * 50 + "\n")
 
 
 async def single_query(question: str, emp_id: str) -> None:
     graph = await build_agent_graph(emp_id)
-    answer = await run_agent(question, emp_id, graph=graph)
-    print(format_display_answer(answer))
+    resp = await run_agent(question, emp_id, graph=graph)
+    print(format_display_answer(resp))
 
 
 def main() -> None:

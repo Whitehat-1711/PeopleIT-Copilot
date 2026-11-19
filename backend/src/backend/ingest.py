@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 import chromadb
 from dotenv import load_dotenv
@@ -26,18 +27,28 @@ def ingest_documents() -> None:
     )
 
     splitter = MarkdownHeaderTextSplitter(
-    headers_to_split_on=[
-        ("##", "section"),
-    ],
-    strip_headers=False,
-)
+        headers_to_split_on=[
+            ("##", "section"),
+        ],
+        strip_headers=False,
+    )
 
     all_chunks = []
     for md_file in sorted(DATA_DIR.glob("*.md")):
         raw_text = md_file.read_text(encoding="utf-8")
+
+        # Extract Owner and Last-Updated metadata if present
+        owner_match = re.search(r"Owner:\s*(.+)", raw_text, re.IGNORECASE)
+        owner = owner_match.group(1).strip() if owner_match else "General HR/IT Team"
+
+        last_updated_match = re.search(r"Last[- ]Updated:\s*(.+)", raw_text, re.IGNORECASE)
+        last_updated = last_updated_match.group(1).strip() if last_updated_match else "2026-01-01"
+
         chunks = splitter.split_text(raw_text)
         for chunk in chunks:
             chunk.metadata["source"] = md_file.name
+            chunk.metadata["owner"] = owner
+            chunk.metadata["last_updated"] = last_updated
             all_chunks.append(chunk)
 
     if not all_chunks:
@@ -59,7 +70,7 @@ def ingest_documents() -> None:
         metadatas=metadatas,
         embeddings=vectors,
     )
-    print(f"Indexed {len(all_chunks)} policy sections into Docker ChromaDB.")
+    print(f"Indexed {len(all_chunks)} policy sections from {len(list(DATA_DIR.glob('*.md')))} files into Docker ChromaDB.")
 
 
 if __name__ == "__main__":

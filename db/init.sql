@@ -46,3 +46,14 @@ WHERE emp_id = NULLIF(current_setting('app.emp_id', true), '');
 -- Grant SELECT on employees (filtered by RLS) and v_self_service view
 GRANT SELECT ON employees TO readonly_user;
 GRANT SELECT ON v_self_service TO readonly_user;
+
+-- Task C4: Tickets table for escalation
+CREATE TABLE IF NOT EXISTS tickets (
+    ticket_id VARCHAR(20) PRIMARY KEY,
+    emp_id VARCHAR(10) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    summary TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+GRANT SELECT, INSERT ON tickets TO readonly_user;
