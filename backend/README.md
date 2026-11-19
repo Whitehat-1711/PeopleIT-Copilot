@@ -177,7 +177,19 @@ python -m backend.cli --as E102
 python -m backend.cli --as E102 "Can I take 5 days off?"
 ```
 
-### 4. Run Test Suite
+### 4. Run FastAPI Backend Server
+> [!NOTE]
+> ChromaDB runs on port 8000 (`http://localhost:8000`). Run the FastAPI backend on port **8001** to avoid port collisions.
+```powershell
+# Option A: Run via module
+python -m backend.api
+
+# Option B: Run via uvicorn CLI
+python -m uvicorn backend.api:app --host 127.0.0.1 --port 8001 --reload
+```
+Swagger API Documentation: [http://localhost:8001/docs](http://localhost:8001/docs)
+
+### 5. Run Test Suite
 ```powershell
 pytest tests/
 ```
