@@ -1,6 +1,6 @@
-# Enterprise HR & IT Assistant
+# ⚙️ WorkPulse AI — Backend Engine & Security Core
 
-An enterprise-grade HR and IT support agent built with LangGraph, Model Context Protocol (MCP), ChromaDB (RAG), and PostgreSQL with strict defense-in-depth security guardrails and structured verifiable citations.
+The backend service for **WorkPulse AI** is an enterprise-grade HR and IT support copilot built with **LangGraph**, **FastAPI**, **ChromaDB (RAG)**, and **PostgreSQL (Row-Level Security)**. It enforces strict defense-in-depth security guardrails, verifiable citations, persistent conversation memory, and automated ticket escalation.
 
 ---
 
