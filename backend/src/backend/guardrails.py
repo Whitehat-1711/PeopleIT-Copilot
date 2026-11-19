@@ -43,7 +43,6 @@ def check_input_guardrail(user_query: str) -> tuple[bool, str]:
     classifier_llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         temperature=0,
-        transport="rest",
     ).with_structured_output(GuardrailDecision)
 
     decision: GuardrailDecision = classifier_llm.invoke(

@@ -77,7 +77,6 @@ async def build_agent_graph():
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         temperature=0,
-        transport="rest",
     ).bind_tools(all_tools)
 
     async def agent_node(state: AgentState) -> dict:
