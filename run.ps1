@@ -1,4 +1,4 @@
-﻿# WorkPulse AI — PowerShell Helper Script
+# WorkPulse AI — PowerShell Helper Script
 param (
     [Parameter(Position=0)]
     [ValidateSet("up", "down", "ingest", "test", "api", "ui", "db", "help")]

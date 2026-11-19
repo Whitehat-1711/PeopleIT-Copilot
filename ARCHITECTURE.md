@@ -43,7 +43,7 @@ flowchart TD
     RATE --> STATE
     STATE --> ING_NODE
     ING_NODE -->|Approved| ROUTER_NODE
-    ROUTER_NODE <--> CHECK
+    ROUTER_NODE --- CHECK
     ROUTER_NODE --> TOOL_NODE
     TOOL_NODE --> CHROMA
     TOOL_NODE --> POSTGRES
@@ -82,7 +82,7 @@ sequenceDiagram
     participant Memory as Checkpointer (MemorySaver)
     participant Agent as LangGraph Orchestrator
     participant RAG as ChromaDB Vector Store
-    participant DB as PostgreSQL (RLS)
+    participant DB as PostgreSQL RLS
     participant GuardOut as Output Guardrail & Scrubber
     participant Audit as PostgreSQL Audit Log
 

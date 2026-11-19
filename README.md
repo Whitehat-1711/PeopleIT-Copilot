@@ -53,19 +53,19 @@ flowchart TD
     subgraph Gateway["API & Guardrail Tier"]
         API["FastAPI Backend (:8001)"]
         SSE["SSE Token Streamer"]
-        IN_GUARD["Input Guardrail (Scope & Injection)"]
+        IN_GUARD["Input Guardrail - Scope & Injection"]
     end
 
     subgraph Engine["LangGraph Orchestration Tier"]
         ROUTER{"Query Classifier & Router"}
         MEM["Conversation Checkpointer (MemorySaver)"]
         AGENT["Enterprise Agent Node"]
-        OUT_GUARD["Output Guardrail (Ownership & PII Scrubber)"]
+        OUT_GUARD["Output Guardrail - Ownership & PII Scrubber"]
     end
 
     subgraph DataTier["Data & Security Tier"]
-        RAG["ChromaDB Vector Store (:8000)<br/>38 Policy Sections | Strict XML Wrapper"]
-        PG["PostgreSQL (:5432)<br/>Row-Level Security (RLS) | v_self_service"]
+        RAG["ChromaDB Vector Store (:8000)<br/>38 Policy Sections &bull; Strict XML Wrapper"]
+        PG["PostgreSQL (:5432)<br/>Row-Level Security (RLS) &bull; v_self_service"]
         AUDIT["PostgreSQL audit_log & tickets<br/>Immutable Redacted Log"]
     end
 
@@ -77,7 +77,7 @@ flowchart TD
     ROUTER --> MEM
     ROUTER --> AGENT
     AGENT -->|Vector Search| RAG
-    AGENT -->|RLS Query (app.emp_id)| PG
+    AGENT -->|RLS Query via app.emp_id| PG
     AGENT -->|Escalation| AUDIT
     AGENT --> OUT_GUARD
     OUT_GUARD -->|Redacted Output| SSE
