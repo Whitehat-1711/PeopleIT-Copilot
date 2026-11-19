@@ -8,6 +8,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 from backend.guardrails import check_input_guardrail, redact_pii
 from backend.llm_factory import make_llm
+from backend.log import log
 from backend.mcp_client import load_postgres_tools
 from backend.rag import search_company_policies
 
@@ -48,12 +49,15 @@ def input_guard_node(state: AgentState) -> dict:
     last_msg = state["messages"][-1]
     user_text = last_msg.content if isinstance(last_msg.content, str) else str(last_msg.content)
 
+    log("🛡️  input_guard: checking scope & injection...")
     is_allowed, block_reason = check_input_guardrail(user_text)
     if not is_allowed:
+        log(f"🚫 input_guard: blocked — {block_reason}")
         return {
             "messages": [AIMessage(content=block_reason)],
             "blocked": True,
         }
+    log("✅ input_guard: passed")
     return {"blocked": False}
 
 
@@ -62,6 +66,7 @@ def route_after_input_guard(state: AgentState) -> str:
 
 
 def output_guard_node(state: AgentState) -> dict:
+    log("🧹 output_guard: redacting PII...")
     last_msg = state["messages"][-1]
     if isinstance(last_msg, AIMessage):
         raw_text = _extract_text(last_msg.content)
@@ -71,22 +76,38 @@ def output_guard_node(state: AgentState) -> dict:
 
 
 async def build_agent_graph():
+    log("🔧 Building agent graph (connecting to Postgres MCP & ChromaDB)...")
     mcp_tools = await load_postgres_tools()
     all_tools = [search_company_policies, *mcp_tools]
+    log(f"🔌 Loaded {len(all_tools)} tools: {[t.name for t in all_tools]}")
 
-    llm = make_llm(tools=all_tools)
+    llm = make_llm(tools=all_tools, label="agent")
 
     async def agent_node(state: AgentState) -> dict:
+        log("🤖 agent: calling LLM...")
         # emp_id is always present in state; it was set at the entry point, never from user text.
         system_prompt = _build_system_prompt(state["emp_id"])
         messages = [SystemMessage(content=system_prompt), *state["messages"]]
         response = await llm.ainvoke(messages)
+        n_tool_calls = len(getattr(response, "tool_calls", []) or [])
+        if n_tool_calls:
+            log(f"🔨 agent: requesting {n_tool_calls} tool call(s): {[tc['name'] for tc in response.tool_calls]}")
+        else:
+            log("✅ agent: final answer ready")
         return {"messages": [response]}
+
+    async def tools_node_logged(state: AgentState) -> dict:
+        tool_calls = state["messages"][-1].tool_calls or []
+        for tc in tool_calls:
+            log(f"⚙️  tool [{tc['name']}]: running...")
+        result = await ToolNode(all_tools).ainvoke(state)
+        log("⚙️  tool: done")
+        return result
 
     workflow = StateGraph(AgentState)
     workflow.add_node("input_guard", input_guard_node)
     workflow.add_node("agent", agent_node)
-    workflow.add_node("tools", ToolNode(all_tools))
+    workflow.add_node("tools", tools_node_logged)
     workflow.add_node("output_guard", output_guard_node)
 
     workflow.add_edge(START, "input_guard")

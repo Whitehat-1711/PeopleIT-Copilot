@@ -1,13 +1,16 @@
 import argparse
 import asyncio
+import os
 
 from backend.agent import build_agent_graph, run_agent
+from backend.log import log
 
 
 async def interactive_loop(emp_id: str) -> None:
-    print(f"Initializing HR & IT Assistant for {emp_id} (connecting to Postgres MCP & ChromaDB)...")
+    groq_status = "✅ Groq fallback active" if os.getenv("GROQ_API_KEY") else "⚠️  No GROQ_API_KEY — Gemini only"
+    log(f"Starting HR & IT Assistant for {emp_id} | {groq_status}")
     graph = await build_agent_graph()
-    print("Ready! Type your HR/IT question below (type 'exit' or 'quit' to stop).\n")
+    print("\nReady! Type your HR/IT question below (type 'exit' or 'quit' to stop).\n")
 
     while True:
         try:
@@ -22,6 +25,7 @@ async def interactive_loop(emp_id: str) -> None:
             print("Goodbye!")
             break
 
+        log(f"💬 Question received for {emp_id}")
         answer = await run_agent(user_input, emp_id, graph=graph)
         print(f"\nAssistant:\n{answer}\n" + "-" * 50 + "\n")
 
