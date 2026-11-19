@@ -43,9 +43,16 @@ SELECT emp_id, full_name, department, leave_balance, laptop_model
 FROM employees
 WHERE emp_id = NULLIF(current_setting('app.emp_id', true), '');
 
--- Grant SELECT on employees (filtered by RLS) and v_self_service view
+-- Expose public directory view for identity switcher (hides phone, email, laptop, leave_balance)
+CREATE OR REPLACE VIEW v_employee_directory AS
+SELECT emp_id, full_name, department
+FROM employees
+ORDER BY emp_id;
+
+-- Grant SELECT on employees (filtered by RLS) and views
 GRANT SELECT ON employees TO readonly_user;
 GRANT SELECT ON v_self_service TO readonly_user;
+GRANT SELECT ON v_employee_directory TO readonly_user;
 
 -- Task C4: Tickets table for escalation
 CREATE TABLE IF NOT EXISTS tickets (

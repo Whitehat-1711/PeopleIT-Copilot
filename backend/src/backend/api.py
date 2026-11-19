@@ -123,30 +123,26 @@ def health_check():
 
 @app.get("/employees")
 def list_employees():
-    """Returns directory of demo employees for frontend identity switcher."""
+    """Returns directory of all employees for frontend identity switcher."""
     try:
-        demo_ids = ["E101", "E102", "E103", "E104", "E105"]
-        employees = []
         with psycopg.connect(DB_URL) as conn:
             with conn.cursor() as cur:
-                for eid in demo_ids:
-                    cur.execute(
-                        "SET app.emp_id = %s; SELECT emp_id, full_name, department, laptop_model FROM v_self_service;",
-                        (eid,),
-                    )
-                    row = cur.fetchone()
-                    if row:
-                        employees.append({
+                cur.execute(
+                    "SELECT emp_id, full_name, department FROM v_employee_directory ORDER BY emp_id;"
+                )
+                rows = cur.fetchall()
+                if rows:
+                    return [
+                        {
                             "id": row[0],
                             "name": row[1],
                             "department": row[2],
-                            "laptop": row[3],
                             "role": f"{row[2]} Lead" if "Eng" in row[2] else f"{row[2]} Specialist",
-                        })
-        if employees:
-            return employees
+                        }
+                        for row in rows
+                    ]
     except Exception as e:
-        log(f"⚠️ Error querying employees with session setting: {e}")
+        log(f"⚠️ Error querying employee directory: {e}")
 
     return [
         {"id": "E101", "name": "Aarav Sharma", "department": "Engineering", "role": "Engineering Lead"},
