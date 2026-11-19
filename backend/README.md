@@ -124,6 +124,37 @@ For questions like *"Can I take 5 days off?"*:
 
 ---
 
+## Phase D: Backend API, Memory & Audit Log
+
+### 1. Production FastAPI Service (`backend/src/backend/api.py`)
+- **`POST /chat`**: Accepts `{ "message": str, "emp_id": str, "thread_id": str }` and returns `{ "answer": str, "sources": list, "route": str, "status": str, "ticket_id": str | None }`.
+- **`POST /chat/stream`**: Server-Sent Events (SSE) streaming endpoint emitting token-by-token deltas (`data: {"delta": token}`) and a final structured payload (`data: {"done": true, ...}`).
+- **`GET /employees`**: Returns demo employee profiles (`id`, `name`, `role`, `department`) for the identity switcher in the UI while strictly respecting database Row-Level Security.
+- **`GET /health`**: Health check reporting database and vector store connectivity.
+- **`POST /feedback`**: Records employee thumbs-up / thumbs-down ratings and optional comments.
+- **`GET /audit?limit=50`**: Admin view of recent interaction logs with PII redaction.
+- **Lifespan Initialization**: Pre-warms the agent graph, LLM, and MCP database tools at FastAPI startup to minimize cold-start latency.
+
+### 2. Conversation Memory & Multi-Turn Context (Task D2)
+- State persistence is backed by LangGraph's `MemorySaver` checkpointer, tracking conversation sessions via `thread_id`.
+- Seamless follow-up context resolution (e.g. *"How many leave days do I have?"* followed by *"And do they carry over?"*).
+- **Defense-in-Depth**: Input guardrails (scope classifier & injection gate) evaluate **every turn** of the conversation thread, preventing multi-turn jailbreak attempts.
+- "New chat" actions generate fresh `thread_id` values to isolate session memory.
+
+### 3. Persistent Audit Logging with PII Redaction (Task D3)
+- Interaction records are saved to PostgreSQL `audit_log`: `(id, ts, emp_id, thread_id, question, route, status, guardrail_triggered, tools_used, sources, latency_ms)`.
+- Sensitive personal data (Aadhaar, PAN, phone numbers, email addresses) is automatically redacted before persistence.
+
+### 4. User Feedback Tracking (Task D4)
+- PostgreSQL `feedback` table links ratings (`up` / `down`) and user comments to the corresponding `audit_id`.
+
+### 5. Centralized Configuration & Resilience (Tasks D5 & D6)
+- Configurations managed cleanly via `.env` (with `.env.example` committed).
+- In-memory sliding-window `RateLimiter` per `emp_id` (default 30 req/min).
+- Model call timeouts (30s) and retry policies (`max_retries=3` on Groq, `max_retries=2` on Gemini) with automatic fallback.
+
+---
+
 ## Running & Testing
 
 ### 1. Start Services

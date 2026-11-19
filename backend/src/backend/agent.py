@@ -1,12 +1,17 @@
 import json
+import re
+import time
+import uuid
 from pathlib import Path
 from typing import Annotated, Any, TypedDict
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 
+from backend.audit import log_audit_turn
 from backend.employee_tools import create_employee_tools
 from backend.guardrails import (
     REFUSAL_INJECTION,
@@ -23,6 +28,10 @@ from backend.ticket_tools import create_ticket_record, make_ticket_tool
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(BACKEND_DIR / ".env")
+
+# Global in-memory checkpointer & graph cache for zero-latency turn reuse
+_SHARED_CHECKPOINTER = MemorySaver()
+_GRAPH_CACHE: dict[str, Any] = {}
 
 _SYSTEM_PROMPT_TEMPLATE = """You are an enterprise HR and IT Support Assistant.
 Follow these rules strictly:
@@ -115,13 +124,14 @@ def check_groundedness(answer: str, context: str) -> bool:
     try:
         classifier_llm = make_llm(temperature=0, label="groundedness")
         res = classifier_llm.invoke(
-            "You are a factual consistency evaluator. Assess whether the claims in the Answer are supported by the provided Context (which includes retrieved policy rules and employee records).\n"
+            "You are a factual consistency evaluator. Assess whether the claims in the Answer are supported by the provided Context (which includes retrieved policy rules, database records, and conversation history).\n"
             f"Context:\n{context[:4000]}\n\n"
             f"Answer:\n{answer}\n\n"
             "If the answer is reasonably grounded in the provided context and facts, respond strictly with 'YES'. "
             "Only respond with 'NO' if the answer introduces fabricated company policies or blatant hallucinations."
         )
         text = _extract_text(res.content).strip().upper()
+        log(f"🔎 Groundedness check result: {text!r} for answer: {answer[:100]!r}")
         return "YES" in text
     except Exception as e:
         log(f"⚠️ Groundedness check warning: {e}")
@@ -154,9 +164,21 @@ def output_guard_node(state: AgentState) -> dict:
             return {"messages": [AIMessage(content=json.dumps(blocked_payload), id=last_msg.id)]}
 
         # Task C5: Groundedness check
-        retrieved_ctx = state.get("retrieved_context", "")
-        if retrieved_ctx and "search_company_policies" in state.get("tools_used", []):
-            is_grounded = check_groundedness(cleaned, retrieved_ctx)
+        tool_contexts = [
+            m.content if isinstance(m.content, str) else str(m.content)
+            for m in state.get("messages", [])
+            if hasattr(m, "content") and (getattr(m, "type", "") == "tool" or type(m).__name__ == "ToolMessage")
+        ]
+        combined_ctx = "\n".join(tool_contexts) if tool_contexts else state.get("retrieved_context", "")
+
+        has_rag_in_thread = any(
+            "search_company_policies" in (tc.get("name") if isinstance(tc, dict) else getattr(tc, "name", ""))
+            for m in state.get("messages", [])
+            for tc in (getattr(m, "tool_calls", None) or [])
+        ) or "search_company_policies" in state.get("tools_used", [])
+
+        if combined_ctx and has_rag_in_thread:
+            is_grounded = check_groundedness(cleaned, combined_ctx)
             if not is_grounded:
                 log("⚠️ Groundedness check FAILED — ungrounded claims detected, escalating...")
                 ticket = create_ticket_record("HR", "Unverified policy question requiring human review", emp_id)
@@ -212,7 +234,7 @@ def output_guard_node(state: AgentState) -> dict:
     return {}
 
 
-async def build_agent_graph(emp_id: str = "E102"):
+async def build_agent_graph(emp_id: str = "E102", checkpointer: Any = None):
     log(f"🔧 Building agent graph for {emp_id} (Postgres MCP & ChromaDB)...")
     try:
         mcp_tools = await load_postgres_tools(emp_id)
@@ -279,7 +301,16 @@ async def build_agent_graph(emp_id: str = "E102"):
     workflow.add_edge("tools", "agent")
     workflow.add_edge("output_guard", END)
 
-    return workflow.compile()
+    saver = checkpointer if checkpointer is not None else _SHARED_CHECKPOINTER
+    return workflow.compile(checkpointer=saver)
+
+
+async def get_or_build_graph(emp_id: str = "E102", checkpointer: Any = None):
+    """Retrieves cached compiled graph for emp_id, or builds and caches it."""
+    global _GRAPH_CACHE
+    if emp_id not in _GRAPH_CACHE:
+        _GRAPH_CACHE[emp_id] = await build_agent_graph(emp_id, checkpointer=checkpointer)
+    return _GRAPH_CACHE[emp_id]
 
 
 async def run_agent(
@@ -291,12 +322,17 @@ async def run_agent(
 ) -> AgentResponse:
     """
     Main entry point for queries.
-    Clears per-request retrieval buffer, sets state, and returns structured AgentResponse.
+    Clears per-request retrieval buffer, sets state with memory checkpointer,
+    and returns structured AgentResponse recorded in PostgreSQL audit_log.
     """
     clear_retrieved_sources()
+    start_time = time.time()
+
+    if not thread_id:
+        thread_id = str(uuid.uuid4())
 
     if graph is None:
-        graph = await build_agent_graph(emp_id)
+        graph = await get_or_build_graph(emp_id)
 
     initial_state = {
         "messages": [HumanMessage(content=message)],
@@ -306,20 +342,44 @@ async def run_agent(
         "tools_used": [],
         "retrieved_context": "",
     }
-    result = await graph.ainvoke(initial_state)
+    config = {"configurable": {"thread_id": thread_id}}
+    result = await graph.ainvoke(initial_state, config=config)
     content = _extract_text(result["messages"][-1].content)
+    latency_ms = int((time.time() - start_time) * 1000)
 
     try:
         data = json.loads(content)
-        return AgentResponse(data)
+        resp = AgentResponse(data)
     except Exception:
-        return AgentResponse({
+        resp = AgentResponse({
             "answer": content,
             "sources": [],
             "route": "direct",
             "confidence": 0.90,
             "status": "allowed",
         })
+
+    # Extract ticket ID if present in content or tool results
+    ticket_match = re.search(r"\b(HR|IT|FIN)-\d{4,5}\b", str(resp.get("answer", "")))
+    ticket_id = ticket_match.group(0) if ticket_match else None
+
+    # Persist turn in audit_log table (Task D3)
+    audit_id = log_audit_turn(
+        emp_id=emp_id,
+        thread_id=thread_id,
+        question=message,
+        route=resp.get("route", "direct"),
+        status=resp.get("status", "allowed"),
+        guardrail_triggered=(resp.get("status") == "blocked"),
+        tools_used=result.get("tools_used", []),
+        sources=resp.get("sources", []),
+        latency_ms=latency_ms,
+    )
+
+    resp["audit_id"] = audit_id
+    resp["thread_id"] = thread_id
+    resp["ticket_id"] = ticket_id
+    return resp
 
 
 def _extract_text(content) -> str:

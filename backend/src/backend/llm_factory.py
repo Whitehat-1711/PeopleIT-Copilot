@@ -30,14 +30,21 @@ def _groq(temperature: float = 0) -> ChatGroq | None:
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return None
-    return ChatGroq(model=GROQ_MODEL, temperature=temperature, api_key=api_key)
+    return ChatGroq(
+        model=GROQ_MODEL,
+        temperature=temperature,
+        api_key=api_key,
+        timeout=30.0,
+        max_retries=3,
+    )
 
 
 def _gemini(temperature: float = 0) -> ChatGoogleGenerativeAI:
     return ChatGoogleGenerativeAI(
         model=GEMINI_MODEL,
         temperature=temperature,
-        max_retries=1,
+        timeout=30.0,
+        max_retries=2,
     )
 
 

@@ -57,3 +57,31 @@ CREATE TABLE IF NOT EXISTS tickets (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 GRANT SELECT, INSERT ON tickets TO readonly_user;
+
+-- Task D3: Audit log table
+CREATE TABLE IF NOT EXISTS audit_log (
+    id SERIAL PRIMARY KEY,
+    ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    emp_id VARCHAR(10) NOT NULL,
+    thread_id VARCHAR(50) NOT NULL,
+    question TEXT NOT NULL,
+    route VARCHAR(50),
+    status VARCHAR(50),
+    guardrail_triggered BOOLEAN DEFAULT FALSE,
+    tools_used JSONB DEFAULT '[]'::jsonb,
+    sources JSONB DEFAULT '[]'::jsonb,
+    latency_ms INT DEFAULT 0
+);
+GRANT SELECT, INSERT ON audit_log TO readonly_user;
+GRANT USAGE, SELECT ON SEQUENCE audit_log_id_seq TO readonly_user;
+
+-- Task D4: Feedback table
+CREATE TABLE IF NOT EXISTS feedback (
+    id SERIAL PRIMARY KEY,
+    audit_id INT REFERENCES audit_log(id) ON DELETE SET NULL,
+    rating VARCHAR(10) NOT NULL,
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+GRANT SELECT, INSERT ON feedback TO readonly_user;
+GRANT USAGE, SELECT ON SEQUENCE feedback_id_seq TO readonly_user;
