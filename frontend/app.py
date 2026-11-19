@@ -23,114 +23,318 @@ st.set_page_config(
 
 BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://127.0.0.1:8001")
 
-# Custom enterprise CSS styling
+# ============================================================================
+# Custom Enterprise Dark Theme CSS Styling
+# ============================================================================
 st.markdown("""
 <style>
-    /* Main container refinements */
-    .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 2rem;
+    /* ── Main App & Viewport Dark Background ── */
+    html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"] {
+        background-color: #0F172A !important;
+        color: #F8FAFC !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    
-    /* Branding Header */
+
+    /* Fixed top header transparency */
+    header[data-testid="stHeader"] {
+        background-color: rgba(15, 23, 42, 0.9) !important;
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid #1E293B;
+    }
+
+    /* Main container: ample top padding to avoid header overlap, bottom padding for pinned chat bar */
+    .block-container {
+        padding-top: 5rem !important;
+        padding-bottom: 8rem !important;
+        max-width: 960px !important;
+    }
+
+    /* ── Sidebar Styling ── */
+    [data-testid="stSidebar"] {
+        background-color: #0B0F19 !important;
+        border-right: 1px solid #1E293B !important;
+    }
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label {
+        color: #F1F5F9 !important;
+    }
+
+    /* Brand Logo & Title */
+    .brand-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 0.5rem;
+        padding: 4px 0;
+    }
+    .brand-icon {
+        font-size: 2.2rem;
+        line-height: 1;
+    }
+    .brand-text-block {
+        display: flex;
+        flex-direction: column;
+    }
     .brand-title {
         font-size: 1.6rem;
         font-weight: 800;
-        color: #1E293B;
+        line-height: 1.15;
         letter-spacing: -0.5px;
-        margin-bottom: 0.1rem;
+    }
+    .brand-wp {
+        color: #FFFFFF !important;
+    }
+    .brand-ai {
+        color: #818CF8 !important;
+        background: linear-gradient(135deg, #818CF8 0%, #C084FC 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     .brand-tagline {
-        font-size: 0.85rem;
-        color: #64748B;
-        margin-bottom: 1rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #94A3B8 !important;
+        margin-top: 2px;
     }
 
     /* SSO Banner */
     .sso-banner {
-        background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
-        border: 1px solid #C7D2FE;
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.18) 0%, rgba(99, 102, 241, 0.08) 100%);
+        border: 1px solid #4338CA;
         border-radius: 8px;
-        padding: 8px 12px;
+        padding: 10px 12px;
         font-size: 0.78rem;
-        color: #3730A3;
-        margin-bottom: 1rem;
+        color: #C7D2FE !important;
+        margin-bottom: 1.2rem;
+        line-height: 1.45;
     }
 
-    /* Route Badges */
+    /* Sidebar Buttons */
+    [data-testid="stSidebar"] .stButton button {
+        background-color: #1E293B !important;
+        color: #E2E8F0 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+        text-align: left !important;
+        padding: 8px 14px !important;
+        width: 100% !important;
+        transition: all 0.15s ease !important;
+    }
+    [data-testid="stSidebar"] .stButton button:hover {
+        background-color: #312E81 !important;
+        border-color: #6366F1 !important;
+        color: #FFFFFF !important;
+    }
+
+    /* ── Tabs Navigation Styling ── */
+    [data-testid="stTabs"] {
+        margin-top: 0.5rem;
+    }
+    [data-testid="stTabs"] [role="tablist"] {
+        gap: 8px;
+        background-color: #1E293B !important;
+        border-radius: 10px;
+        padding: 6px;
+        border: 1px solid #334155;
+    }
+    [data-testid="stTabs"] [role="tab"] {
+        color: #94A3B8 !important;
+        font-weight: 600;
+        font-size: 0.88rem;
+        border-radius: 7px;
+        padding: 8px 18px;
+        border: none !important;
+        transition: all 0.2s ease;
+    }
+    [data-testid="stTabs"] [role="tab"]:hover {
+        color: #F8FAFC !important;
+        background-color: #334155 !important;
+    }
+    [data-testid="stTabs"] [aria-selected="true"] {
+        background-color: #4F46E5 !important;
+        color: #FFFFFF !important;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+    }
+
+    /* ── Chat Message Bubbles ── */
+    [data-testid="stChatMessage"] {
+        background-color: #1E293B !important;
+        border: 1px solid #334155 !important;
+        border-radius: 12px !important;
+        padding: 16px 20px !important;
+        margin-bottom: 14px !important;
+        color: #F8FAFC !important;
+    }
+    [data-testid="stChatMessage"] p,
+    [data-testid="stChatMessage"] span,
+    [data-testid="stChatMessage"] div,
+    [data-testid="stChatMessage"] li {
+        color: #F1F5F9 !important;
+        font-size: 0.95rem !important;
+        line-height: 1.6 !important;
+    }
+    [data-testid="stChatMessage"] code {
+        background-color: #0F172A !important;
+        color: #A5B4FC !important;
+        border: 1px solid #334155 !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+    }
+
+    /* ── Route Badges ── */
     .badge {
         display: inline-block;
-        padding: 3px 9px;
+        padding: 4px 12px;
         font-size: 0.75rem;
-        font-weight: 600;
+        font-weight: 700;
         border-radius: 9999px;
         margin-right: 6px;
-        margin-top: 4px;
+        margin-top: 8px;
         margin-bottom: 4px;
+        letter-spacing: 0.3px;
     }
-    .badge-rag { background-color: #DBEAFE; color: #1E40AF; border: 1px solid #BFDBFE; }
-    .badge-db { background-color: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
-    .badge-hybrid { background-color: #EDE9FE; color: #5B21B6; border: 1px solid #DDD6FE; }
-    .badge-escalation { background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
-    .badge-blocked { background-color: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
-    .badge-direct { background-color: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+    .badge-rag        { background-color: #172554; color: #93C5FD !important; border: 1px solid #1E40AF; }
+    .badge-db         { background-color: #064E3B; color: #6EE7B7 !important; border: 1px solid #059669; }
+    .badge-hybrid     { background-color: #3B0764; color: #D8B4FE !important; border: 1px solid #7E22CE; }
+    .badge-escalation { background-color: #451A03; color: #FCD34D !important; border: 1px solid #B45309; }
+    .badge-blocked    { background-color: #450A0A; color: #FCA5A5 !important; border: 1px solid #B91C1C; }
+    .badge-direct     { background-color: #1E293B; color: #CBD5E1 !important; border: 1px solid #475569; }
 
-    /* Source Chip */
+    /* ── Source Chips ── */
     .source-chip {
         display: inline-flex;
         align-items: center;
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
+        background-color: #0F172A;
+        border: 1px solid #334155;
         border-radius: 6px;
-        padding: 3px 8px;
+        padding: 4px 10px;
         font-size: 0.75rem;
-        color: #334155;
+        color: #CBD5E1 !important;
         margin-right: 6px;
-        margin-top: 4px;
+        margin-top: 6px;
     }
 
-    /* Ticket Card */
+    /* ── Support Ticket Card ── */
     .ticket-card {
-        background-color: #FFFBEB;
+        background-color: #451A03;
         border-left: 4px solid #F59E0B;
-        border-radius: 6px;
-        padding: 10px 14px;
-        margin-top: 8px;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 10px;
         margin-bottom: 8px;
     }
-    .ticket-title {
-        font-weight: 700;
-        font-size: 0.88rem;
-        color: #B45309;
-    }
-    .ticket-desc {
-        font-size: 0.8rem;
-        color: #78350F;
-    }
+    .ticket-title { font-weight: 700; font-size: 0.9rem; color: #FDE68A !important; }
+    .ticket-desc  { font-size: 0.82rem; color: #FCD34D !important; margin-top: 4px; }
 
-    /* Blocked Card */
+    /* ── Blocked Security Card ── */
     .blocked-card {
-        background-color: #FEF2F2;
+        background-color: #450A0A;
         border-left: 4px solid #EF4444;
-        border-radius: 6px;
-        padding: 10px 14px;
-        margin-top: 8px;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 10px;
         margin-bottom: 8px;
     }
-    .blocked-title {
-        font-weight: 700;
-        font-size: 0.88rem;
-        color: #B91C1C;
+    .blocked-title { font-weight: 700; font-size: 0.9rem; color: #FCA5A5 !important; }
+    .blocked-body  { font-size: 0.85rem; color: #FECACA !important; margin-top: 4px; }
+
+    /* ── Feedback Buttons Inside Chat Message ── */
+    div[data-testid="stChatMessage"] .stButton button {
+        background-color: #1E293B !important;
+        color: #CBD5E1 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+        padding: 6px 14px !important;
+        white-space: nowrap !important;
+        min-height: 34px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    div[data-testid="stChatMessage"] .stButton button:hover {
+        background-color: #334155 !important;
+        border-color: #6366F1 !important;
+        color: #FFFFFF !important;
     }
 
-    /* Welcome Hero */
+    /* ── Expander ── */
+    [data-testid="stExpander"] {
+        background-color: #0F172A !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        margin-top: 10px !important;
+    }
+    [data-testid="stExpander"] summary {
+        color: #94A3B8 !important;
+        font-size: 0.85rem !important;
+    }
+    [data-testid="stExpander"] summary:hover {
+        color: #F8FAFC !important;
+    }
+    [data-testid="stExpander"] div,
+    [data-testid="stExpander"] p,
+    [data-testid="stExpander"] span,
+    [data-testid="stExpander"] li {
+        color: #CBD5E1 !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* ── Welcome Card ── */
     .welcome-card {
-        background: white;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        background: #1E293B;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    }
+    .welcome-card h3 {
+        color: #F8FAFC !important;
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+    .welcome-card p {
+        color: #94A3B8 !important;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* ── Pinned Bottom Chat Input Bar ── */
+    [data-testid="stBottom"] {
+        background-color: #0F172A !important;
+        border-top: 1px solid #1E293B !important;
+        padding-top: 10px !important;
+        padding-bottom: 16px !important;
+    }
+    [data-testid="stBottom"] > div {
+        max-width: 960px !important;
+        margin: 0 auto !important;
+    }
+    [data-testid="stChatInput"] {
+        border: none !important;
+        background: transparent !important;
+    }
+    [data-testid="stChatInput"] textarea {
+        background-color: #1E293B !important;
+        color: #F8FAFC !important;
+        border: 1px solid #334155 !important;
+        border-radius: 12px !important;
+        font-size: 0.95rem !important;
+    }
+    [data-testid="stChatInput"] textarea:focus {
+        border-color: #6366F1 !important;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+    }
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #64748B !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -212,8 +416,18 @@ def submit_feedback(audit_id: int, rating: str, comment: str | None = None):
 # Sidebar (Task E2, E5, E6)
 # ============================================================================
 with st.sidebar:
-    st.markdown('<div class="brand-title">💼 WorkPulse AI</div>', unsafe_allow_html=True)
-    st.markdown('<div class="brand-tagline">Enterprise HR & IT Copilot</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="brand-container">
+            <span class="brand-icon">💼</span>
+            <div class="brand-text-block">
+                <div class="brand-title"><span class="brand-wp">WorkPulse</span> <span class="brand-ai">AI</span></div>
+                <div class="brand-tagline">Enterprise HR &amp; IT Copilot</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # Health status indicator
     health = fetch_backend_health()
@@ -226,8 +440,8 @@ with st.sidebar:
     st.markdown(
         """
         <div class="sso-banner">
-            <strong>🔒 Demo Mode Active:</strong> Switch identity to test Row-Level Security isolation.
-            <em>In production, identity is verified via corporate SSO.</em>
+            <strong style="color: #A5B4FC;">🔒 Demo Mode Active:</strong><br>
+            <span style="color: #CBD5E1;">Switch identity to test Row-Level Security isolation. In production, identity is verified via corporate SSO.</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -289,9 +503,13 @@ with st.sidebar:
 
 
 # ============================================================================
-# Main Area Tabs (Task E2)
+# Main Navigation Tabs (Task E2)
 # ============================================================================
-tab_chat, tab_audit, tab_policies = st.tabs(["💬 Assistant Chat", "📊 Audit Log & Analytics", "📜 Policy Handbook"])
+tab_chat, tab_audit, tab_policies = st.tabs([
+    "💬 Assistant Chat", 
+    "📊 Audit Log & Analytics", 
+    "📜 Policy Handbook"
+])
 
 # Current employee details
 curr_emp_info = next((e for e in employees if e["id"] == st.session_state.current_emp_id), None)
@@ -300,23 +518,31 @@ curr_dept = curr_emp_info["department"] if curr_emp_info else "Corporate"
 
 
 # ============================================================================
+# Chat Input Pinned At Root Level (Always sticks to bottom of viewport)
+# ============================================================================
+queued_input = st.session_state.pop("queued_query", None)
+user_input = st.chat_input("Ask a policy question or request personal records...", key="chat_input")
+active_prompt = queued_input or user_input
+
+
+# ============================================================================
 # Tab 1: Chat Interface (Task E3, E4)
 # ============================================================================
 with tab_chat:
     # Empty State (Task E4)
-    if not st.session_state.messages:
+    if not st.session_state.messages and not active_prompt:
         st.markdown(
             f"""
             <div class="welcome-card">
-                <h3 style="margin-top:0; color:#1E293B;">👋 Hello, {curr_name}!</h3>
-                <p style="color:#475569; font-size:0.95rem;">
+                <h3>👋 Hello, {curr_name}!</h3>
+                <p>
                     I am your <strong>WorkPulse HR & IT AI Assistant</strong>. I can help you check your personal records, 
                     explain company policies, and troubleshoot IT hardware and network access.
                 </p>
-                <div style="font-size:0.83rem; color:#64748B;">
-                    <strong>Active Security Context:</strong> Employee ID <code>{st.session_state.current_emp_id}</code> 
-                    · Department: <code>{curr_dept}</code> 
-                    · PostgreSQL Row-Level Security: <span style="color:#059669; font-weight:600;">ACTIVE</span>
+                <div style="font-size:0.83rem; color:#94A3B8; margin-top: 12px;">
+                    <strong>Active Security Context:</strong> Employee ID <code style="color:#A5B4FC;">{st.session_state.current_emp_id}</code> 
+                    · Department: <code style="color:#A5B4FC;">{curr_dept}</code> 
+                    · PostgreSQL Row-Level Security: <span style="color:#34D399; font-weight:700;">ACTIVE</span>
                 </div>
             </div>
             """,
@@ -340,7 +566,7 @@ with tab_chat:
                 st.session_state["queued_query"] = "What is Aarav's phone number?"
                 st.rerun()
 
-    # Render Conversation Messages
+    # Render Historical Conversation Messages
     for idx, msg in enumerate(st.session_state.messages):
         role = msg.get("role", "user")
         with st.chat_message(role, avatar="🧑‍💼" if role == "user" else "🤖"):
@@ -362,7 +588,7 @@ with tab_chat:
                         f"""
                         <div class="blocked-card">
                             <div class="blocked-title">🛡️ Security Guardrail Triggered ({reason or 'Access Blocked'})</div>
-                            <div>{content}</div>
+                            <div class="blocked-body">{content}</div>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -384,16 +610,14 @@ with tab_chat:
 
                 # Source Chips (Task E3)
                 if sources:
-                    st.markdown("<div style='margin-top: 4px;'>", unsafe_allow_html=True)
+                    chips_html = "<div style='margin-top: 6px;'>"
                     for s in sources:
                         doc = s.get("document", "policy")
                         sec = s.get("section", "General")
                         owner = s.get("owner", "HR")
-                        st.markdown(
-                            f'<span class="source-chip" title="Owner: {owner}">📄 {doc} › <strong>{sec}</strong></span>',
-                            unsafe_allow_html=True,
-                        )
-                    st.markdown("</div>", unsafe_allow_html=True)
+                        chips_html += f'<span class="source-chip" title="Owner: {owner}">📄 {doc} › <strong>{sec}</strong></span>'
+                    chips_html += "</div>"
+                    st.markdown(chips_html, unsafe_allow_html=True)
 
                 # Support Ticket Card (Task E3)
                 if ticket_id:
@@ -418,39 +642,32 @@ with tab_chat:
                         for s in sources:
                             st.markdown(f"  - `{s.get('document')}` › *{s.get('section')}* (Owner: {s.get('owner')})")
 
-                # Feedback Buttons (Task E3)
+                # Feedback Buttons (Task E3) — generous columns so buttons are completely visible
                 if audit_id and status != "blocked":
-                    f_col1, f_col2, f_col_spacer = st.columns([0.1, 0.1, 0.8])
                     feedback_key = f"fb_{audit_id}_{idx}"
-                    with f_col1:
-                        if st.button("👍", key=f"up_{feedback_key}", help="Helpful response"):
+                    fb_col1, fb_col2, _ = st.columns([1, 1, 3])
+                    with fb_col1:
+                        if st.button("👍 Helpful", key=f"up_{feedback_key}", use_container_width=True):
                             if submit_feedback(audit_id, "up"):
-                                st.toast("Thank you for your feedback!", icon="👍")
-                    with f_col2:
-                        if st.button("👎", key=f"down_{feedback_key}", help="Inaccurate or unhelpful"):
+                                st.toast("Thanks for your feedback!", icon="👍")
+                    with fb_col2:
+                        if st.button("👎 Not helpful", key=f"down_{feedback_key}", use_container_width=True):
                             if submit_feedback(audit_id, "down"):
                                 st.toast("Feedback recorded for review.", icon="👎")
 
-    # Check queued query from suggested questions
-    queued_input = st.session_state.pop("queued_query", None)
-    user_input = st.chat_input("Ask a policy question or request personal records...", key="chat_input")
-    active_prompt = queued_input or user_input
-
-    # Process prompt
+    # Handle New Submitted Message (Streaming + Rendering in Window Above)
     if active_prompt:
-        # Display user message
+        # 1. Add user message to session
         st.session_state.messages.append({"role": "user", "content": active_prompt})
         with st.chat_message("user", avatar="🧑‍💼"):
             st.markdown(active_prompt)
 
-        # Prepare assistant placeholder
+        # 2. Prepare streaming assistant placeholder
         with st.chat_message("assistant", avatar="🤖"):
             response_container = st.empty()
             response_container.markdown("⏳ *Consulting company policies & database records...*")
 
-            # Call backend API
             try:
-                # Attempt streaming request first (Task E3)
                 stream_url = f"{BACKEND_API_URL}/chat/stream"
                 payload = {
                     "message": active_prompt,
@@ -480,7 +697,7 @@ with tab_chat:
                                             meta_info = chunk_obj
                                             accumulated_text = chunk_obj.get("answer", accumulated_text)
                                             break
-                except Exception as stream_err:
+                except Exception:
                     is_stream_success = False
 
                 # Fallback to standard POST /chat if stream failed or was incomplete
