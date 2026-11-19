@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import Annotated, TypedDict
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 
 from backend.guardrails import check_input_guardrail, redact_pii
+from backend.llm_factory import make_llm
 from backend.mcp_client import load_postgres_tools
 from backend.rag import search_company_policies
 
@@ -74,10 +74,7 @@ async def build_agent_graph():
     mcp_tools = await load_postgres_tools()
     all_tools = [search_company_policies, *mcp_tools]
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        temperature=0,
-    ).bind_tools(all_tools)
+    llm = make_llm(tools=all_tools)
 
     async def agent_node(state: AgentState) -> dict:
         # emp_id is always present in state; it was set at the entry point, never from user text.

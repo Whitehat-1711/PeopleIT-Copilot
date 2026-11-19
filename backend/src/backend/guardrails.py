@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+from backend.llm_factory import make_llm
 from pydantic import BaseModel, Field
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -40,10 +40,7 @@ def check_input_guardrail(user_query: str) -> tuple[bool, str]:
                 "Blocked by Security Guardrail: Potential prompt injection or unauthorized system instruction override detected.",
             )
 
-    classifier_llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        temperature=0,
-    ).with_structured_output(GuardrailDecision)
+    classifier_llm = make_llm(structured=GuardrailDecision)
 
     decision: GuardrailDecision = classifier_llm.invoke(
         "You are a strict security and scope gatekeeper for an internal enterprise HR & IT Helpdesk AI assistant.\n"
