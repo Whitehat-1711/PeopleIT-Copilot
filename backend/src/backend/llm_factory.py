@@ -50,21 +50,20 @@ def _groq(temperature: float = 0) -> ChatGroq | None:
 
 
 def _logged_fallback(groq_runnable: Any, label: str) -> Any:
-    """Wraps a Groq runnable so it logs when it's actually used."""
-    original_invoke = groq_runnable.invoke
-    original_ainvoke = groq_runnable.ainvoke
-
+    """
+    Wraps a Groq runnable in a RunnableLambda so we can log when the
+    fallback is actually triggered. Monkey-patching doesn't work because
+    LangChain runnables are Pydantic models.
+    """
     def invoke_with_log(input, config=None, **kwargs):
         log(f"⚠️  Gemini unavailable — switching to Groq fallback ({GROQ_MODEL}) [{label}]")
-        return original_invoke(input, config, **kwargs)
+        return groq_runnable.invoke(input, config, **kwargs)
 
     async def ainvoke_with_log(input, config=None, **kwargs):
         log(f"⚠️  Gemini unavailable — switching to Groq fallback ({GROQ_MODEL}) [{label}]")
-        return await original_ainvoke(input, config, **kwargs)
+        return await groq_runnable.ainvoke(input, config, **kwargs)
 
-    groq_runnable.invoke = invoke_with_log
-    groq_runnable.ainvoke = ainvoke_with_log
-    return groq_runnable
+    return RunnableLambda(invoke_with_log, afunc=ainvoke_with_log)
 
 
 def make_llm(
