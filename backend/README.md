@@ -155,20 +155,68 @@ For questions like *"Can I take 5 days off?"*:
 
 ---
 
+## Phase E: Chat Interface (WorkPulse AI)
+
+### 1. Polished Streamlit Frontend (`frontend/app.py`)
+- **Branding & Tagline**: **WorkPulse AI** — *Enterprise HR & IT Copilot with strict data isolation, verified citations, and zero hallucination*.
+- **Identity Switcher & RLS Isolation (Task E5)**:
+  - Sidebar dropdown populated from `GET /employees` across all 12 directory records.
+  - Selecting an employee immediately triggers a session reset with a new `thread_id` to guarantee zero cross-employee memory leakage.
+  - Prominent demo notice: *"Demo mode: switch identity to test Row-Level Security. In production this comes from corporate SSO."*
+- **Rich Message Display (Task E3)**:
+  - Token streaming with SSE generator (`POST /chat/stream`).
+  - Categorized **Route Badges**: Policy Lookup (`📚`), Employee Data (`💾`), Hybrid (`⚡`), Ticket Escalated (`🎫`), Guardrail Blocked (`🚫`).
+  - Verifiable **Source Chips**: `📄 [doc] › [section]` with document owner and last-updated metadata.
+  - **Support Ticket Cards**: Displayed with ticket ID and department contact when unanswerable questions escalate.
+  - **"How I Answered" Transparency Accordion**: Displays confidence score, execution route, and underlying context snippets.
+  - **Audit Feedback**: Thumbs up `👍` / thumbs down `👎` buttons submitting ratings to `POST /feedback`.
+- **Empty & Error States (Task E4)**:
+  - Empty state with personalized greeting and clickable example queries.
+  - Friendly error states with backend status indicator.
+- **Admin & Analytics Tab (Task E2)**:
+  - Real-time audit log viewer displaying turn ID, redacted questions, security guardrail triggers, latency, and feedback.
+  - Policy handbook viewer to browse all 6 underlying policy markdown files.
+
+---
+
 ## Running & Testing
 
 ### 1. Start Services
 ```powershell
 docker compose up -d
+# or: make up / .\run.ps1 up
 ```
 
 ### 2. Ingest Documents
 ```powershell
 cd backend
 python -m backend.ingest
+# or: make ingest / .\run.ps1 ingest
 ```
 
-### 3. Run CLI
+### 3. Run FastAPI Backend Server
+> [!NOTE]
+> ChromaDB runs on port 8000 (`http://localhost:8000`). Run the FastAPI backend on port **8001** to avoid port collisions.
+```powershell
+# Option A: Run via helper
+.\run.ps1 api
+
+# Option B: Run via uvicorn CLI
+python -m uvicorn backend.api:app --host 127.0.0.1 --port 8001 --reload
+```
+Swagger API Documentation: [http://localhost:8001/docs](http://localhost:8001/docs)
+
+### 4. Run Streamlit Frontend UI
+```powershell
+# Option A: Run via helper
+.\run.ps1 ui
+
+# Option B: Run via streamlit CLI
+streamlit run frontend/app.py --server.port 8501
+```
+Web Application: [http://localhost:8501](http://localhost:8501)
+
+### 5. Run CLI
 ```powershell
 # Interactive chat as employee E102
 python -m backend.cli --as E102
@@ -177,19 +225,8 @@ python -m backend.cli --as E102
 python -m backend.cli --as E102 "Can I take 5 days off?"
 ```
 
-### 4. Run FastAPI Backend Server
-> [!NOTE]
-> ChromaDB runs on port 8000 (`http://localhost:8000`). Run the FastAPI backend on port **8001** to avoid port collisions.
+### 6. Run Test Suite
 ```powershell
-# Option A: Run via module
-python -m backend.api
-
-# Option B: Run via uvicorn CLI
-python -m uvicorn backend.api:app --host 127.0.0.1 --port 8001 --reload
-```
-Swagger API Documentation: [http://localhost:8001/docs](http://localhost:8001/docs)
-
-### 5. Run Test Suite
-```powershell
-pytest tests/
+pytest tests/ -v
+# or: make test / .\run.ps1 test
 ```
