@@ -1,7 +1,7 @@
-# WorkPulse AI — PowerShell Helper Script
+﻿# WorkPulse AI — PowerShell Helper Script
 param (
     [Parameter(Position=0)]
-    [ValidateSet("up", "down", "ingest", "test", "api", "ui", "help")]
+    [ValidateSet("up", "down", "ingest", "test", "api", "ui", "db", "help")]
     [string]$Command = "help"
 )
 
@@ -38,6 +38,10 @@ switch ($Command) {
         Write-Host "💼 Starting WorkPulse AI Streamlit UI on http://localhost:8501..." -ForegroundColor Green
         & $VENV_PY -m streamlit run (Join-Path $PSScriptRoot "frontend\app.py") --server.port 8501 --server.address 127.0.0.1
     }
+    "db" {
+        Write-Host "🐘 Connecting to PostgreSQL (company_db)..." -ForegroundColor Cyan
+        docker exec -it hr_it_postgres psql -U admin -d company_db
+    }
     Default {
         Write-Host "WorkPulse AI - Management Commands:" -ForegroundColor Yellow
         Write-Host "  .\run.ps1 up      - Start Postgres & ChromaDB containers"
@@ -46,5 +50,6 @@ switch ($Command) {
         Write-Host "  .\run.ps1 test    - Run complete pytest test suite"
         Write-Host "  .\run.ps1 api     - Start FastAPI backend server (port 8001)"
         Write-Host "  .\run.ps1 ui      - Start Streamlit frontend (port 8501)"
+        Write-Host "  .\run.ps1 db      - Open interactive PostgreSQL terminal"
     }
 }
