@@ -1,0 +1,25 @@
+# Core Agent & LangChain Ecosystem
+langgraph>=1.2.22
+langchain>=1.0.0
+langchain-core>=1.0.0
+langchain-community>=0.4.0
+langchain-text-splitters>=1.0.0
+
+# LLM Provider (Google Gemini)
+langchain-google-genai>=4.5.0
+
+# Vector Database (RAG)
+chromadb>=0.6.0
+langchain-chroma>=0.2.0
+
+# Model Context Protocol (MCP)
+mcp>=1.0.0
+langchain-mcp-adapters>=0.3.2
+
+# Guardrails & Validation
+pydantic>=2.10.0
+
+# Backend API & Environment
+fastapi>=0.115.0
+uvicorn>=0.32.0
+python-dotenv>=1.0.1

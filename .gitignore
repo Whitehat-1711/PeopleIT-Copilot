@@ -1,0 +1,20 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Docker volumes / local data (don't commit DB state)
+pgdata/
+chromadata/
+
+# Env files at root
+.env
+.env.*
+!.env.example
